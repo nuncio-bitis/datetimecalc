@@ -15,13 +15,9 @@ CONFIG -= debug \
     debug_and_release_target
 SOURCES += about.cpp \
     main.cpp \
-    datetimecalc.cpp \
-    ../Tools/zDate.cpp \
-    ../Tools/Time.cpp
+    datetimecalc.cpp
 HEADERS += about.h \
-    datetimecalc.h \
-    ../Tools/Time.hpp \
-    ../Tools/zDate.hpp
+    datetimecalc.h
 FORMS += datetimecalc.ui \
     about.ui
 RC_FILE = datetimecalc.rc

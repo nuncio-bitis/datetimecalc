@@ -19,8 +19,6 @@
  ******************************************************************************/
 
 #include "datetimecalc.h"
-#include "Time.hpp"
-#include "zDate.hpp"
 #include "about.h"
 
 #include <iostream>
@@ -158,18 +156,20 @@ void DateTimeCalc::on_dateTargetTodayButton_clicked()
 void DateTimeCalc::on_timeCalcButton_clicked()
 {
   QTime baseQTime = ui.baseTimeEdit->time();
-  Time result = Time(baseQTime.hour(), baseQTime.minute(), baseQTime.second());
+  QTime result = baseQTime;
 
   QTime offsetQTime = ui.offsetTimeEdit->time();
-  Time offset = Time(offsetQTime.hour(), offsetQTime.minute(), offsetQTime.second());
+  int offset = (offsetQTime.hour() * 3600)
+          + (offsetQTime.minute() * 60)
+          + offsetQTime.second();
 
   switch (timeOp) {
   case Add:
-    result = result + offset;
+    result = result.addSecs(offset);
     break;
 
   case Subtract:
-    result = result - offset;
+    result = result.addSecs(-offset);
     break;
 
   default:
@@ -177,7 +177,7 @@ void DateTimeCalc::on_timeCalcButton_clicked()
     break;
   }
 
-  timeResult = QTime(result.Hours(), result.Minutes(), result.Seconds(), 0);
+  timeResult = result;
   SetTimeResultText();
 }
 
@@ -186,7 +186,7 @@ void DateTimeCalc::on_timeCalcButton_clicked()
 void DateTimeCalc::on_dateCalcButton_clicked()
 {
   QDate baseQDate = ui.baseDateEdit->date();
-  zDate result = zDate((zDate::month)baseQDate.month(), baseQDate.day(), baseQDate.year());
+  QDate result = baseQDate;
 
   QString daysText = ui.daysEdit->text();
   QString weeksText = ui.weeksEdit->text();
@@ -208,15 +208,15 @@ void DateTimeCalc::on_dateCalcButton_clicked()
 
   switch (dateOp) {
   case Add:
-    result = result + days;
-    result = result.AddWeeks(weeks);
-    result = result.AddYears(years);
+    result = result.addDays(days);
+    result = result.addDays(weeks*7);
+    result = result.addYears(years);
     break;
 
   case Subtract:
-    result = result - days;
-    result = result.AddWeeks(-weeks);
-    result = result.AddYears(-years);
+    result = result.addDays(-days);
+    result = result.addDays(-weeks*7);
+    result = result.addYears(-years);
     break;
 
   default:
@@ -224,10 +224,7 @@ void DateTimeCalc::on_dateCalcButton_clicked()
     break;
   }
 
-  //cout << (int) result.Month() << "/" << result.Day() << "/" << result.Year() << endl;
-
-  QDate dateResult = QDate(result.Year(), result.Month(), result.Day());
-  ui.resultDateEdit->setDate(dateResult);
+  ui.resultDateEdit->setDate(result);
 }
 
 //******************************************************************************
@@ -235,24 +232,34 @@ void DateTimeCalc::on_dateCalcButton_clicked()
 void DateTimeCalc::on_dateDiffCalcButton_clicked()
 {
   QDate baseQDate = ui.baseDateDiffEdit->date();
-  zDate baseDate = zDate((zDate::month)baseQDate.month(), baseQDate.day(), baseQDate.year());
+  QDate baseDate = baseQDate;
 
   QDate targetQDate = ui.targetDateDiffEdit->date();
-  zDate targetDate = zDate((zDate::month)targetQDate.month(), targetQDate.day(), targetQDate.year());
+  QDate targetDate = targetQDate;
 
   // Calculate difference in dates
-  long result = baseDate - targetDate;
+  long result = abs(targetDate.daysTo(baseDate));
 
-  QString resultText = QString("%1").arg(result) + " days\n";
+  QString resultText = QString("%1").arg(result) + " days;\n";
 
   int y = result / 365;
   int ld = y / 4;
   int d = result - (y * 365) - ld;
   int wks = d / 7;
   int remDays = d % 7;
-  resultText += QString("%1").arg(y) + " years, "
-              + QString("%1").arg(wks) + " weeks, "
-              + QString("%1").arg(remDays) + " days";
+
+  if (remDays < 0) {
+      remDays += 7;
+      wks -= 1;
+  }
+  if (wks < 0) {
+      wks += 52;
+      y -= 1;
+  }
+
+  resultText += "   " + QString("%1").arg(y) + " years,\n"
+              + "   " + QString("%1").arg(wks) + " weeks,\n"
+              + "   " + QString("%1").arg(remDays) + " days";
 
   ui.dateDiffResultEdit->setPlainText(resultText);
 }
